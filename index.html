@@ -24,302 +24,8 @@
 
   <!-- Swiper -->
   <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-
-  <script>(function (global, factory) {
-      typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-        typeof define === 'function' && define.amd ? define(['exports'], factory) :
-          (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.countUp = {}));
-    })(this, (function (exports) {
-      'use strict';
-
-      var __assign = (undefined && undefined.__assign) || function () {
-        __assign = Object.assign || function (t) {
-          for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-              t[p] = s[p];
-          }
-          return t;
-        };
-        return __assign.apply(this, arguments);
-      };
-      // playground: stackblitz.com/edit/countup-typescript
-      var CountUp = /** @class */ (function () {
-        function CountUp(target, endVal, options) {
-          var _this = this;
-          this.endVal = endVal;
-          this.options = options;
-          this.version = '2.3.2';
-          this.defaults = {
-            startVal: 0,
-            decimalPlaces: 0,
-            duration: 2,
-            useEasing: true,
-            useGrouping: true,
-            smartEasingThreshold: 999,
-            smartEasingAmount: 333,
-            separator: ',',
-            decimal: '.',
-            prefix: '',
-            suffix: '',
-            enableScrollSpy: false,
-            scrollSpyDelay: 200,
-            scrollSpyOnce: false,
-          };
-          this.finalEndVal = null; // for smart easing
-          this.useEasing = true;
-          this.countDown = false;
-          this.error = '';
-          this.startVal = 0;
-          this.paused = true;
-          this.once = false;
-          this.count = function (timestamp) {
-            if (!_this.startTime) {
-              _this.startTime = timestamp;
-            }
-            var progress = timestamp - _this.startTime;
-            _this.remaining = _this.duration - progress;
-            // to ease or not to ease
-            if (_this.useEasing) {
-              if (_this.countDown) {
-                _this.frameVal = _this.startVal - _this.easingFn(progress, 0, _this.startVal - _this.endVal, _this.duration);
-              }
-              else {
-                _this.frameVal = _this.easingFn(progress, _this.startVal, _this.endVal - _this.startVal, _this.duration);
-              }
-            }
-            else {
-              _this.frameVal = _this.startVal + (_this.endVal - _this.startVal) * (progress / _this.duration);
-            }
-            // don't go past endVal since progress can exceed duration in the last frame
-            var wentPast = _this.countDown ? _this.frameVal < _this.endVal : _this.frameVal > _this.endVal;
-            _this.frameVal = wentPast ? _this.endVal : _this.frameVal;
-            // decimal
-            _this.frameVal = Number(_this.frameVal.toFixed(_this.options.decimalPlaces));
-            // format and print value
-            _this.printValue(_this.frameVal);
-            // whether to continue
-            if (progress < _this.duration) {
-              _this.rAF = requestAnimationFrame(_this.count);
-            }
-            else if (_this.finalEndVal !== null) {
-              // smart easing
-              _this.update(_this.finalEndVal);
-            }
-            else {
-              if (_this.callback) {
-                _this.callback();
-              }
-            }
-          };
-          // default format and easing functions
-          this.formatNumber = function (num) {
-            var neg = (num < 0) ? '-' : '';
-            var result, x1, x2, x3;
-            result = Math.abs(num).toFixed(_this.options.decimalPlaces);
-            result += '';
-            var x = result.split('.');
-            x1 = x[0];
-            x2 = x.length > 1 ? _this.options.decimal + x[1] : '';
-            if (_this.options.useGrouping) {
-              x3 = '';
-              for (var i = 0, len = x1.length; i < len; ++i) {
-                if (i !== 0 && (i % 3) === 0) {
-                  x3 = _this.options.separator + x3;
-                }
-                x3 = x1[len - i - 1] + x3;
-              }
-              x1 = x3;
-            }
-            // optional numeral substitution
-            if (_this.options.numerals && _this.options.numerals.length) {
-              x1 = x1.replace(/[0-9]/g, function (w) { return _this.options.numerals[+w]; });
-              x2 = x2.replace(/[0-9]/g, function (w) { return _this.options.numerals[+w]; });
-            }
-            return neg + _this.options.prefix + x1 + x2 + _this.options.suffix;
-          };
-          // t: current time, b: beginning value, c: change in value, d: duration
-          this.easeOutExpo = function (t, b, c, d) {
-            return c * (-Math.pow(2, -10 * t / d) + 1) * 1024 / 1023 + b;
-          };
-          this.options = __assign(__assign({}, this.defaults), options);
-          this.formattingFn = (this.options.formattingFn) ?
-            this.options.formattingFn : this.formatNumber;
-          this.easingFn = (this.options.easingFn) ?
-            this.options.easingFn : this.easeOutExpo;
-          this.startVal = this.validateValue(this.options.startVal);
-          this.frameVal = this.startVal;
-          this.endVal = this.validateValue(endVal);
-          this.options.decimalPlaces = Math.max(this.options.decimalPlaces);
-          this.resetDuration();
-          this.options.separator = String(this.options.separator);
-          this.useEasing = this.options.useEasing;
-          if (this.options.separator === '') {
-            this.options.useGrouping = false;
-          }
-          this.el = (typeof target === 'string') ? document.getElementById(target) : target;
-          if (this.el) {
-            this.printValue(this.startVal);
-          }
-          else {
-            this.error = '[CountUp] target is null or undefined';
-          }
-          // scroll spy
-          if (typeof window !== 'undefined' && this.options.enableScrollSpy) {
-            if (!this.error) {
-              // set up global array of onscroll functions to handle multiple instances
-              window['onScrollFns'] = window['onScrollFns'] || [];
-              window['onScrollFns'].push(function () { return _this.handleScroll(_this); });
-              window.onscroll = function () {
-                window['onScrollFns'].forEach(function (fn) { return fn(); });
-              };
-              this.handleScroll(this);
-            }
-            else {
-              console.error(this.error, target);
-            }
-          }
-        }
-        CountUp.prototype.handleScroll = function (self) {
-          if (!self || !window || self.once)
-            return;
-          var bottomOfScroll = window.innerHeight + window.scrollY;
-          var rect = self.el.getBoundingClientRect();
-          var bottomOfEl = rect.top + rect.height + window.pageYOffset;
-          if (bottomOfEl < bottomOfScroll && bottomOfEl > window.scrollY && self.paused) {
-            // in view
-            self.paused = false;
-            setTimeout(function () { return self.start(); }, self.options.scrollSpyDelay);
-            if (self.options.scrollSpyOnce)
-              self.once = true;
-          }
-          else if (window.scrollY > bottomOfEl && !self.paused) {
-            // scrolled past
-            self.reset();
-          }
-        };
-        /**
-         * Smart easing works by breaking the animation into 2 parts, the second part being the
-         * smartEasingAmount and first part being the total amount minus the smartEasingAmount. It works
-         * by disabling easing for the first part and enabling it on the second part. It is used if
-         * usingEasing is true and the total animation amount exceeds the smartEasingThreshold.
-         */
-        CountUp.prototype.determineDirectionAndSmartEasing = function () {
-          var end = (this.finalEndVal) ? this.finalEndVal : this.endVal;
-          this.countDown = (this.startVal > end);
-          var animateAmount = end - this.startVal;
-          if (Math.abs(animateAmount) > this.options.smartEasingThreshold && this.options.useEasing) {
-            this.finalEndVal = end;
-            var up = (this.countDown) ? 1 : -1;
-            this.endVal = end + (up * this.options.smartEasingAmount);
-            this.duration = this.duration / 2;
-          }
-          else {
-            this.endVal = end;
-            this.finalEndVal = null;
-          }
-          if (this.finalEndVal !== null) {
-            // setting finalEndVal indicates smart easing
-            this.useEasing = false;
-          }
-          else {
-            this.useEasing = this.options.useEasing;
-          }
-        };
-        // start animation
-        CountUp.prototype.start = function (callback) {
-          if (this.error) {
-            return;
-          }
-          this.callback = callback;
-          if (this.duration > 0) {
-            this.determineDirectionAndSmartEasing();
-            this.paused = false;
-            this.rAF = requestAnimationFrame(this.count);
-          }
-          else {
-            this.printValue(this.endVal);
-          }
-        };
-        // pause/resume animation
-        CountUp.prototype.pauseResume = function () {
-          if (!this.paused) {
-            cancelAnimationFrame(this.rAF);
-          }
-          else {
-            this.startTime = null;
-            this.duration = this.remaining;
-            this.startVal = this.frameVal;
-            this.determineDirectionAndSmartEasing();
-            this.rAF = requestAnimationFrame(this.count);
-          }
-          this.paused = !this.paused;
-        };
-        // reset to startVal so animation can be run again
-        CountUp.prototype.reset = function () {
-          cancelAnimationFrame(this.rAF);
-          this.paused = true;
-          this.resetDuration();
-          this.startVal = this.validateValue(this.options.startVal);
-          this.frameVal = this.startVal;
-          this.printValue(this.startVal);
-        };
-        // pass a new endVal and start animation
-        CountUp.prototype.update = function (newEndVal) {
-          cancelAnimationFrame(this.rAF);
-          this.startTime = null;
-          this.endVal = this.validateValue(newEndVal);
-          if (this.endVal === this.frameVal) {
-            return;
-          }
-          this.startVal = this.frameVal;
-          if (this.finalEndVal == null) {
-            this.resetDuration();
-          }
-          this.finalEndVal = null;
-          this.determineDirectionAndSmartEasing();
-          this.rAF = requestAnimationFrame(this.count);
-        };
-        CountUp.prototype.printValue = function (val) {
-          var result = this.formattingFn(val);
-          if (this.el.tagName === 'INPUT') {
-            var input = this.el;
-            input.value = result;
-          }
-          else if (this.el.tagName === 'text' || this.el.tagName === 'tspan') {
-            this.el.textContent = result;
-          }
-          else {
-            this.el.innerHTML = result;
-          }
-        };
-        CountUp.prototype.ensureNumber = function (n) {
-          return (typeof n === 'number' && !isNaN(n));
-        };
-        CountUp.prototype.validateValue = function (value) {
-          var newValue = Number(value);
-          if (!this.ensureNumber(newValue)) {
-            this.error = "[CountUp] invalid start or end value: ".concat(value);
-            return null;
-          }
-          else {
-            return newValue;
-          }
-        };
-        CountUp.prototype.resetDuration = function () {
-          this.startTime = null;
-          this.duration = Number(this.options.duration) * 1000;
-          this.remaining = this.duration;
-        };
-        return CountUp;
-      }());
-
-      exports.CountUp = CountUp;
-
-      Object.defineProperty(exports, '__esModule', { value: true });
-
-    }));
-  </script>
+  <!-- CountUp.js -->
+  <script src="assets/countup.min.js"></script>
 </head>
 
 <body data-aos-easing="ease" data-aos-duration="750" data-aos-delay="0">
@@ -366,9 +72,10 @@
             <div class="col position-relative">
               <p class="small mb-n2 opacity-70">
                 Recife, Pernambuco
-                <br>4 a 28 de setembro de 2025
+                <br>17 a 27 de setembro de 2026
               </p>
               <h1 class="display-3 mb-5">Festival Cena CumpliCidades</h1>
+              <!-- Social Icons -->
               <div class="social-icons mt-4 mb-3 mt-lg-5 pt-lg-2 mx-auto mx-md-0">
                 <a href="https://www.facebook.com/CenaCumplicidades" class="text-reset text-decoration-none"
                   target="_blank" aria-label="Facebook">
@@ -436,262 +143,56 @@
       </div>
     </section>
 
-    <!-- Numeros -->
-    <section class="py-6 py-lg-7 bg-light">
-      <div class="container">
-        <div class="row justify-content-center text-center">
-          <div class="col-md-3">
-            <p class="display-4">2025:</p>
-          </div>
-          <div class="col-md-3">
-            <p class="mb-5 mb-md-0"><span class="display-4" data-countup="" data-to="30">0</span><br><span
-                class="d-block text-muted mt-n1">apresentações</span></p>
-          </div>
-          <div class="col-md-3">
-            <p class="mb-5 mb-md-0"><span class="display-4" data-countup="" data-to="23">0</span><br><span
-                class="d-block text-muted mt-n1">obras</span></p>
-          </div>
-          <div class="col-md-3">
-            <p class="mb-5 mb-md-0"><span class="display-4" data-countup="" data-to="4">0</span><br><span
-                class="d-block text-muted mt-n1">ações de formações</span></p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Programa 2025 -->
+    <!-- Programa 2026 -->
     <section class="py-6 py-lg-7">
       <div class="container">
         <div class="row">
           <div class="col">
-            <div class="row justify-content-between align-items-baseline"></div>
-            <h2 id="programa">Programa</h2>
-          </div>
-        </div>
 
-        <div class="tab-content" id="myTabContent">
-          <div class="tab-pane fade show active" id="day1" role="tabpanel" aria-labelledby="day1-tab">
-            <div class="table-responsive">
-              <table class="table table-striped fs-5 mb-0">
-                <thead>
-                  <tr class="fs-4 text-secondary">
-                    <th scope="col">Data</th>
-                    <th scope="col">Espetáculo</th>
-                    <th scope="col">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>04.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro de Santa Isabel</div>
-                    </td>
-                    <td><a
-                        href="https://www.sympla.com.br/evento/ate-aqui-tudo-bem-e-dancas-do-carnaval-de-recife/3090120"
-                        target="_blank"> Danças do Carnaval de Recife / Até Aqui Tudo Bem – Cia MALKA (França)
-                      </a>
-                    </td>
-                    <td>R$ 20</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      05.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro de Santa Isabel</div>
-                    </td>
-                    <td>Tudo Acontece na Bahia – Subitus Company (PE)</td>
-                    <td><em style="color: #6c757d; font-size: 0.9em;">Esgotado</em></td>
-                  </tr>
-                  <tr>
-                    <td>
-                      05.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Hermilo</div>
-                    </td>
-                    <td><a href="https://www.sympla.com.br/evento/gabrielas/3095220" target="_blank"> Gabri[Elas] –
-                        Coletivo Mulheres da Vida (SP)
-                      </a>
-                    </td>
-                    <td>R$ 40</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      06.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro de Santa Isabel</div>
-                    </td>
-                    <td><a href="https://www.sympla.com.br/evento/stuck-fur-stuck-um-espetaculodois-atos/3090143"
-                        target="_blank">Ne me jugez pas & Scape – Marcelos Move Dance School (Suíça/Brasil) </a>
-                    </td>
-                    <td>R$ 20</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      06.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Hermilo</div>
-                    </td>
-                    <td><a href="https://www.sympla.com.br/evento/primavera-cega/3095215" target="_blank"> Primavera
-                        Cega – Igor Iatcekiw (SP)
-                      </a>
-                    </td>
-                    <td>R$ 40</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      10.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Escola Municipal de Arte João Pernambuco</div>
-                    </td>
-                    <td><a href="https://www.sympla.com.br/evento/se-eu-fosse-malcolm/3090191" target="_blank"> Se eu
-                        fosse Malcolm? – Eron Villar e Dj Vibra (Recife)
-                      </a>
-                    </td>
-                    <td>Gratuito</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      11.09 - 18h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Apolo</div>
-                    </td>
-                    <td>Mouras - Impacto FM (Recife)</td>
-                    <td>R$ 20</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      11.09 </a>- 20h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Hermilo</div>
-                    </td>
-                    <td><a href="https://www.sympla.com.br/evento/touka-danses/3095198" target="_blank"> CHENN / FRIDA
-                        DANSE | A Coluna Quebrada / Mes Horizons - Touka Danses CDCN Guiana Francesa (França)
-                      </a>
-                    </td>
-                    <td>Gratuito</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      12.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Apolo</div>
-                    </td>
-                    <td><a href="https://www.sympla.com.br/evento/se-eu-fosse-eu/3090213" target="_blank"> Se eu Fosse
-                        Eu – Luna Padilha e convidados (Recife)</a>
-                    </td>
-                    <td>R$ 20</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      13.09 - 18h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Apolo</div>
-                    </td>
-                    <td>Contando Histórias – Integrarte (Recife)</td>
-                    <td>R$ 20</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      13.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Hermilo</div>
-                    </td>
-                    <td>Banquete de Amor e Falta - Acupe Grupo de Dança (Recife)</td>
-                    <td>R$ 20</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      14.09 - 16h
-                      <div class="text-muted" style="font-size: 0.85em;">Museu de Arte Sacra de PE</div>
-                    </td>
-                    <td>Balancê Antropofágico – YLA e Jeff Manuel (França | Brasil)</td>
-                    <td>Gratuito</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      17 a 21.09
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro de Santa Isabel</div>
-                    </td>
-                    <td>Mostra de Coreografias CENA</td>
-                    <td>R$ 40</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      19.09 - 20h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro do Parque</div>
-                    </td>
-                    <td><a href="https://www.sympla.com.br/evento/neris-rodrigues-musicas-do-mundo/3090254"
-                        target="_blank"> Músicas do Mundo – Neris Rodrigues (Paulista-PE)
-                      </a>
-                    </td>
-                    <td>R$ 20</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      20.09 - 20h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro do Parque</div>
-                    </td>
-                    <td><a href="https://www.sympla.com.br/evento/banda-chanfre/3090271" target="_blank"> Banda Chanfrê
-                        (França | Brasil)</a>
-                    </td>
-                    <td>R$ 20</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      24.09 - 19h
-                      <div class="text-muted" style="font-size: 0.85em;">Centro de Artes e Comunicação – CAC UFPE</div>
-                    </td>
-                    <td>Trupe</a> – Focus Cia de Dança (RJ)</td>
-                    <td>Gratuito</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      26.09 - 20h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Luiz Mendona</div>
-                    </td>
-                    <td>De Bach a Nirvana – Focus Cia de Dança (RJ) </td>
-                    <td>Gratuito</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      27.09 - 20h
-                      <div class="text-muted" style="font-size: 0.85em;">Teatro Luiz Mendonça</div>
-                    </td>
-                    <td>Carlota, Focus dança Piazzolla – Focus Cia de Dança (RJ) </td>
-                    <td>Gratuito</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      28.09 - 11h30
-                      <div class="text-muted" style="font-size: 0.85em;"> Parque da Jaqueira</div>
-                    </td>
-                    <td>Trupe – Focus Cia de Dança (RJ)</td>
-                    <td>Gratuito</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="row justify-content-between align-items-baseline">
+              <div class="col">
+                <h2 id="programa">Programa</h2>
+              </div>
             </div>
-            <p style="text-align: center;">
-              <em style="font-size: x-small;">Espetáculos gratuitos
-                com retirada 1h antes na bilheteria. Sujeito à lotação do espaço.</em>
-            </p>
-            <!-- <div class="programa">
-              <a href="assets/grade_programa_2024.pdf" target="_blank">Download do programa completo</a>
-            </div> -->
-          </div>
-        </div>
-      </div>
-      </div>
-      </div>
-    </section>
 
-    <!-- Numeros -->
-    <section class="py-6 py-lg-7 bg-light">
-      <div class="container">
-        <div class="row justify-content-center text-center">
-          <div class="col-md-3">
-            <p class="display-4">No palco:</p>
-          </div>
-          <div class="col-md-3">
-            <p class="mb-5 mb-md-0"><span class="display-4" data-countup="" data-to="2">0</span><br><span
-                class="d-block text-muted mt-n1">países</span></p>
-          </div>
-          <div class="col-md-3">
-            <p class="mb-5 mb-md-0"><span class="display-4" data-countup="" data-to="7">0</span><br><span
-                class="d-block text-muted mt-n1">estados</span></p>
-          </div>
-          <div class="col-md-3">
-            <p class="mb-5 mb-md-0"><span class="display-4" data-countup="" data-to="10">0</span><br><span
-                class="d-block text-muted mt-n1">cidades em PE</span></p>
+            <div class="tab-content" id="myTabContent">
+              <div class="tab-pane fade show active" id="day1" role="tabpanel" aria-labelledby="day1-tab">
+                <div class="table-responsive">
+                  <table class="table table-striped fs-5 mb-0">
+                    <thead>
+                      <tr class="fs-4 text-secondary">
+                        <th scope="col">Data</th>
+                        <th scope="col">Espetáculo</th>
+                        <th scope="col">Local</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>17.09 - 20h</td>
+                        <td>ROSSI - Cia Teatro Alberto Maranhão-CDTAM (RN)</td>
+                        <td>Teatro de Santa Isabel</td>
+                      </tr>
+                      <tr>
+                        <td>18.09 - 20h</td>
+                        <td>Deitar a vista, ouvir o tempo - Jonas Alves e Grupo (PE)</td>
+                        <td>Teatro de Santa Isabel</td>
+                      </tr>
+                      <tr>
+                        <td>19.09 - 19h</td>
+                        <td>Clarice, George e Nelson: Cumplicidades - Studio de Danças (PE)</a></td>
+                        <td>Teatro de Santa Isabel</td>
+                      </tr>
+                      <tr>
+                        <td>24.09 a 27.09</td>
+                        <td><a href="https://dancadigital.com/cena2026" target="_blank">Mostra de Coreografias CENA</a>
+                        </td>
+                        <td>Teatro do Parque</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -796,6 +297,8 @@
               <div class="col-12 mb-3">
                 <ul
                   class="list-unstyled text-center text-md-start d-flex flex-wrap justify-content-center justify-content-md-start gap-3">
+                  <li class="mb-1"><a href="https://2025.cenacumplicidades.com/" class="text-reset"
+                      target="_blank">2025</a></li>
                   <li class="mb-1"><a href="https://2024.cenacumplicidades.com/" class="text-reset"
                       target="_blank">2024</a></li>
                   <li class="mb-1"><a href="https://2023.cenacumplicidades.com/" class="text-reset"
@@ -827,7 +330,7 @@
 
     <!-- Footer sponsor -->
     <div class="sponsor-box">
-      <img src="assets/img/sponsor.jpeg" alt="Régua de incentivo, apoio e realização.">
+      <img src="assets/img/sponsor.png" alt="Régua de incentivo, apoio e realização.">
     </div>
 
     <!-- Footer bottom -->
@@ -851,7 +354,7 @@
             </a>
           </div>
           <div class="col-auto">
-            <span> Festival Cena CumpliCidades 2025</span>
+            <span> Festival Cena CumpliCidades 2026</span>
           </div>
         </div>
       </div>

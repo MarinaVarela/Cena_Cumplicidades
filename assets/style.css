@@ -28098,6 +28098,12 @@ fieldset:disabled .btn {
   max-width: 100%;
 }
 
+@media (min-width: 1200px) {
+  .sponsor-box img {
+    max-width: 40%;
+  }
+}
+
 @media (min-width: 576px) {
   .modal {
     --bs-modal-margin: 1.75rem;
