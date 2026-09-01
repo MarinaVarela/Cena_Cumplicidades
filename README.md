@@ -1,1 +1,1 @@
-![image](https://github.com/user-attachments/assets/8a68f58a-e147-44dd-b7ae-856b569dcf8a)
+<img width="2528" height="713" alt="Captura de tela 2026-09-01 183315" src="https://github.com/user-attachments/assets/dee87ea8-a490-4fae-a722-242b24ee09d6" />
